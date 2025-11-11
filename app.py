@@ -1,141 +1,111 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.express as px
+from pathlib import Path
 
-# --- Page setup ---
-st.set_page_config(page_title="Income and Obesity Analysis", layout="wide")
+# --- File Paths ---
+BASE = Path(__file__).parent
+DATA_DIR = BASE / "data"
+RESULTS_DIR = BASE / "results"
+PLOTS_DIR = BASE / "plots"
+
+st.set_page_config(page_title="Income, Health & Obesity Analysis", layout="wide")
 
 # --- Sidebar Navigation ---
-st.sidebar.title("Navigation")
-page = st.sidebar.radio("Go to:", ["About the Project", "Obesity Analysis & ML"])
+tabs = st.sidebar.radio(
+    "Navigation",
+    ["About the Project", "Obesity Analysis and ML"]
+)
 
-# --- Load Data ---
-@st.cache_data
-def load_data():
-    us_df = pd.read_csv("data/us_health_income_2023.csv")
-    us_clusters = pd.read_csv("results/us_clusters_2023.csv")
-    global_df = pd.read_csv("data/global_merged_obesity_income.csv")
-    return us_df, us_clusters, global_df
+# --- Tab 1: About the Project ---
+if tabs == "About the Project":
+    st.title("About the Project")
 
-us_df, us_clusters, global_df = load_data()
+    readme_path = BASE / "README.md"
+    if readme_path.exists():
+        with open(readme_path, "r", encoding="utf-8") as f:
+            st.markdown(f.read())
+    else:
+        st.warning("README.md not found. Please include the project description file.")
 
-# =======================================================
-# TAB 1 — ABOUT THE PROJECT
-# =======================================================
-if page == "About the Project":
-    st.title("📊 U.S. and Global Obesity Analysis")
-    st.markdown("""
-    This Streamlit app explores the relationship between **income**, **obesity**, 
-    and **physical activity** across **U.S. states** and **countries globally**.
-    
-    **Data Sources**
-    - U.S. data: BEA (Income), CDC BRFSS (Health indicators)
-    - Global data: World Bank (GDP per capita), WHO via Our World In Data (Obesity rates)
-    
-    **Objective**
-    - Investigate whether higher income correlates with lower obesity.
-    - Examine how physical activity mediates that relationship.
-    - Compare domestic (U.S.) and international patterns.
-    
-    **Machine Learning**
-    - Applied K-Means clustering to group U.S. states by income and health metrics.
-    - Visualized patterns using interactive Plotly charts and choropleth maps.
-    """)
+# --- Tab 2: Obesity Analysis and ML ---
+elif tabs == "Obesity Analysis and ML":
+    st.title("Obesity Analysis and Machine Learning Insights")
 
-# =======================================================
-# TAB 2 — OBESITY ANALYSIS & ML
-# =======================================================
-elif page == "Obesity Analysis & ML":
-    st.title("🏥 Obesity and Machine Learning Analysis")
-
+    # --- Section 1: State-level Relationships ---
+    st.header("1. State-level Relationships (2023)")
+    st.markdown("Exploring income, physical activity, and obesity at the U.S. state level.")
     col1, col2 = st.columns(2)
 
-    # --- Scatter 1: Income vs Obesity ---
     with col1:
-        st.subheader("State-level Relationship: Income vs Obesity (2023)")
-        fig1 = px.scatter(
-            us_df, x="PerCapitaIncome", y="ObesityRate", trendline="ols",
-            text="Locationdesc", labels={
-                "PerCapitaIncome": "Per Capita Income ($)",
-                "ObesityRate": "Obesity Rate (%)"
-            }
-        )
-        fig1.update_traces(textposition="top center")
-        st.plotly_chart(fig1, use_container_width=True)
+        st.subheader("Income vs Obesity (2023)")
+        us_income_obesity_html = PLOTS_DIR / "us_income_obesity_interactive.html"
+        if us_income_obesity_html.exists():
+            st.components.v1.html(us_income_obesity_html.read_text(), height=500)
+        else:
+            st.image(PLOTS_DIR / "us_income_obesity.png", caption="Income vs Obesity (2023)")
 
-    # --- Scatter 2: Physical Activity vs Obesity ---
     with col2:
-        st.subheader("State-level Relationship: Physical Activity vs Obesity (2023)")
-        fig2 = px.scatter(
-            us_df, x="PhysicalActivityRate", y="ObesityRate", trendline="ols",
-            text="Locationdesc", labels={
-                "PhysicalActivityRate": "Physical Activity Rate (%)",
-                "ObesityRate": "Obesity Rate (%)"
-            }
+        st.subheader("Physical Activity vs Obesity (2023)")
+        us_activity_html = PLOTS_DIR / "us_activity_obesity_interactive.html"
+        if us_activity_html.exists():
+            st.components.v1.html(us_activity_html.read_text(), height=500)
+        else:
+            st.info("Interactive chart not found. Please generate and save HTML plot.")
+
+    st.divider()
+
+    # --- Section 2: State Clustering ---
+    st.header("2. State Clusters by Income and Health Indicators (2023)")
+    st.markdown("Unsupervised learning (K-Means) identifies groups of states by income, obesity, and activity levels.")
+
+    # Load cluster data
+    clusters_path = RESULTS_DIR / "us_clusters_2023.csv"
+    if clusters_path.exists():
+        df_clusters = pd.read_csv(clusters_path)
+        fig_clusters = px.scatter(
+            df_clusters,
+            x="PerCapitaIncome",
+            y="ObesityRate",
+            color="ClusterLabel",
+            hover_name="Locationdesc",
+            title="State Clusters by Income and Health Indicators (2023)",
+            labels={"PerCapitaIncome": "Per Capita Income ($)", "ObesityRate": "Obesity Rate (%)"}
         )
-        fig2.update_traces(textposition="top center")
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig_clusters, use_container_width=True)
+    else:
+        st.warning("us_clusters_2023.csv not found. Please run clustering step first.")
 
-    st.markdown("---")
+    st.subheader("U.S. Map: State Clusters by Income, Obesity, and Activity (2023)")
+    us_map_html = PLOTS_DIR / "us_clusters_map.html"
+    if us_map_html.exists():
+        st.components.v1.html(us_map_html.read_text(), height=600)
+    else:
+        st.info("Map visualization missing. Please export 'us_clusters_map.html'.")
 
-    # --- Scatter 3: Clusters by Income and Health ---
-    st.subheader("State Clusters by Income and Health Indicators (2023)")
-    fig3 = px.scatter(
-        us_clusters, x="PerCapitaIncome", y="ObesityRate",
-        color=us_clusters["Cluster"].astype(str),
-        text="Locationdesc",
-        labels={"PerCapitaIncome": "Per Capita Income ($)", "ObesityRate": "Obesity Rate (%)"}
-    )
-    fig3.update_traces(textposition="top center")
-    st.plotly_chart(fig3, use_container_width=True)
+    st.divider()
 
-    st.markdown("---")
+    # --- Section 3: Global vs U.S. Comparison ---
+    st.header("3. Global Relationship: Income vs Obesity (2022)")
+    st.markdown("Comparing the U.S. state-level trends to global obesity-income dynamics.")
 
-    # --- Choropleth: U.S. Cluster Map ---
-    st.subheader("U.S. State Clusters by Income, Obesity, and Activity (2023)")
-    fig4 = px.choropleth(
-        us_clusters, locations="Locationabbr", color="ClusterLabel",
-        locationmode="USA-states", hover_name="Locationdesc",
-        hover_data={
-            "PerCapitaIncome": True,
-            "ObesityRate": True,
-            "PhysicalActivityRate": True
-        },
-        color_discrete_sequence=px.colors.qualitative.Bold,
-        scope="usa"
-    )
-    st.plotly_chart(fig4, use_container_width=True)
+    col3, col4 = st.columns(2)
 
-    st.markdown("---")
+    with col3:
+        st.subheader("U.S. States: Income vs Obesity (2023)")
+        if us_income_obesity_html.exists():
+            st.components.v1.html(us_income_obesity_html.read_text(), height=500)
+        else:
+            st.image(PLOTS_DIR / "us_income_obesity.png", caption="U.S. States: Income vs Obesity (2023)")
 
-    # --- Global Scatter: Income vs Obesity ---
-    st.subheader("Global Relationship: Income vs Obesity (2022)")
+    with col4:
+        st.subheader("World: Income vs Obesity (2022)")
+        global_html = PLOTS_DIR / "global_income_obesity_interactive.html"
+        if global_html.exists():
+            st.components.v1.html(global_html.read_text(), height=500)
+        else:
+            st.info("Global interactive chart missing. Please export global plot to HTML.")
 
-    # Use numpy safely instead of deprecated pd.np
-    global_df["log_GDP_per_capita"] = np.where(
-        global_df["GDP_per_capita_USD"] > 0,
-        np.log10(global_df["GDP_per_capita_USD"]),
-        np.nan
-    )
+    st.divider()
+    st.markdown("**Interpretation:** Richer countries show an inverted-U pattern in obesity, while within the U.S., the relationship is linear and negative—wealthier states have lower obesity and higher physical activity levels.")
 
-    fig5 = px.scatter(
-        global_df, x="log_GDP_per_capita", y="ObesityRate",
-        trendline="ols", color="ObesityRate", color_continuous_scale="Viridis",
-        text="ISO3", hover_name="country_name",
-        labels={
-            "log_GDP_per_capita": "Log10 GDP per Capita (USD)",
-            "ObesityRate": "Obesity Rate (%)"
-        }
-    )
-    fig5.update_traces(textposition="top center")
-    st.plotly_chart(fig5, use_container_width=True)
-
-    st.markdown("---")
-
-    st.subheader("📈 Comparison: U.S. States vs Global Patterns")
-    st.write("""
-    - **U.S. States:** show a *negative* correlation — higher income → lower obesity.  
-    - **Global Countries:** show a *positive then flattening* relationship — as economies grow, obesity rises then stabilizes.  
-    - Together, these trends highlight how economic stage and lifestyle infrastructure shape public health outcomes.
-    """)
