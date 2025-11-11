@@ -1,13 +1,3 @@
-This modification implements the custom clustering logic you requested for **Section 3** and **Section 4** by:
-
-1.  Bypassing the loading of external cluster files (`us_clusters_2023.csv`, etc.).
-2.  Creating new clusters based on terciles (three equal bins) for `PerCapitaIncome` and `ObesityRate` on the main `us_df`.
-3.  Generating descriptive `ClusterLabel` strings like **"High Income, Low Obesity"** for plotting.
-4.  Updating the titles to reflect the **"User-Defined"** nature of the new clustering.
-
-Here is the updated `app.py` code:
-
-```python
 # app.py
 import os
 import numpy as np
@@ -124,34 +114,32 @@ else:
     st.plotly_chart(fig_us_act_ob, use_container_width=True)
 
     # ---------- 3. State Clusters Scatter ----------
-    st.subheader("3. State Clusters by Income and Obesity (User-Defined)")
-    
-    # --- New User-Defined Clustering Logic ---
-    clusters_df = us_df.copy()
-    
-    # Define thresholds using quantiles (terciles) for Low/Moderate/High
-    if clusters_df.shape[0] > 3:
-        try:
-            # Create 3 bins for Income and 3 bins for Obesity Rate based on quantiles (terciles)
-            income_bins = pd.qcut(clusters_df["PerCapitaIncome"], q=3, labels=["Low Income", "Moderate Income", "High Income"], duplicates='drop')
-            obesity_bins = pd.qcut(clusters_df["ObesityRate"], q=3, labels=["Low Obesity", "Moderate Obesity", "High Obesity"], duplicates='drop')
-            
-            # Create a composite cluster label (e.g., "High Income, Low Obesity")
-            clusters_df["Income_Category"] = income_bins
-            clusters_df["Obesity_Category"] = obesity_bins
-            clusters_df["ClusterLabel"] = clusters_df["Income_Category"].astype(str) + ", " + clusters_df["Obesity_Category"].astype(str)
-            color_arg = "ClusterLabel"
-        except ValueError as e:
-            # Fallback if qcut fails due to too few unique values or other issues
-            st.warning(f"Could not perform user-defined clustering due to data limitations. Defaulting to no color grouping. Error: {e}")
-            clusters_df["ClusterLabel"] = "Default"
-            color_arg = None
-    else:
-        # Fallback for very small datasets
-        clusters_df["ClusterLabel"] = "Default"
-        color_arg = None
+    st.subheader("3. State Clusters by Income and Health Indicators (2023)")
+    clusters_df = safe_load_csv(PATH_US_CLUSTERS)
+    if clusters_df is None:
+        clusters_df = us_df.copy()
+    cluster_sum = safe_load_csv(PATH_US_CLUSTER_SUM)
 
-    # --- End of New Clustering Logic ---
+    cluster_labels = None
+    if cluster_sum is not None and "Cluster" in cluster_sum.columns:
+        try:
+            lab_map = {}
+            for _, r in cluster_sum.iterrows():
+                lab_map[int(r["Cluster"])] = (
+                    f"Cluster {int(r['Cluster'])}: "
+                    f"Income≈{money_fmt(round(r['PerCapitaIncome']))}, "
+                    f"Obesity≈{round(r['ObesityRate'],1)}%, "
+                    f"Activity≈{round(r['PhysicalActivityRate'],1)}%"
+                )
+            cluster_labels = lab_map
+        except Exception:
+            pass
+
+    if "Cluster" in clusters_df.columns:
+        clusters_df["ClusterLabel"] = clusters_df["Cluster"].map(cluster_labels) if cluster_labels else clusters_df["Cluster"].astype(str)
+        color_arg = "ClusterLabel"
+    else:
+        color_arg = None
 
     fig_clusters = px.scatter(
         clusters_df,
@@ -159,29 +147,23 @@ else:
         color=color_arg,
         text="Locationdesc" if "Locationdesc" in clusters_df.columns else None,
         labels={"PerCapitaIncome": "Per Capita Income ($)", "ObesityRate": "Obesity Rate (%)"},
-        title="State Clusters by Income and Obesity (User-Defined)"
+        title="State Clusters by Income and Health Indicators (2023)"
     )
     fig_clusters.update_traces(textposition="top center")
     st.plotly_chart(fig_clusters, use_container_width=True)
 
     # ---------- 4. U.S. Map of State Clusters ----------
-    st.subheader("4. U.S. State Clusters by Income and Obesity (User-Defined) — US Map")
+    st.subheader("4. U.S. State Clusters by Income, Obesity, and Activity (2023) — US Map")
     if "Locationabbr" in clusters_df.columns:
-        hover_data_map = {"PerCapitaIncome": True, "ObesityRate": True, "PhysicalActivityRate": True}
-        if "Income_Category" in clusters_df.columns:
-             # Add the new user-defined categories to the hover data
-             hover_data_map["Income_Category"] = True
-             hover_data_map["Obesity_Category"] = True
-             
         fig_map = px.choropleth(
             clusters_df,
             locations="Locationabbr",
             locationmode="USA-states",
             color="ClusterLabel" if "ClusterLabel" in clusters_df.columns else None,
             hover_name="Locationdesc" if "Locationdesc" in clusters_df.columns else None,
-            hover_data=hover_data_map,
+            hover_data={"PerCapitaIncome": True, "ObesityRate": True, "PhysicalActivityRate": True},
             scope="usa",
-            title="U.S. State Clusters by Income and Obesity (User-Defined)"
+            title="U.S. State Clusters by Income, Obesity, and Activity (2023)"
         )
         st.plotly_chart(fig_map, use_container_width=True)
     else:
@@ -237,4 +219,3 @@ else:
     st.plotly_chart(fig_global, use_container_width=True)
 
     st.caption("Built with Streamlit • Data: BEA, CDC BRFSS, World Bank, OWID/WHO")
-```
