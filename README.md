@@ -1,57 +1,40 @@
-# Machine Learning Final Project Report  
-**Course:** 2025 Machine Learning and Text Analytics in Business  
-**Instructor:** Assoc. Prof. Hongwei Chuang (GSIM, IUJ)  
-**Toolchain:** Google Colab · pandas · scikit-learn · Plotly · Streamlit-ready workflow  
-**Slides Referenced:** Data Preprocessing, EDA, Clustering, and K-Means
+# ML Final Project: Income and Health Outcomes (Obesity)
+
+**Course:** 2025 Machine Learning and Text Analytics in Business
+**Tools:** Google Colab, pandas, scikit-learn, Plotly, Streamlit
+**Focus:** Data Preprocessing, EDA, Clustering, and K-Means
 
 ---
 
-## 1. Research Question
-**Main Hypothesis:**  
-Does per capita income in the United States influence health outcomes—specifically obesity levels—and how does physical activity mediate this relationship?  
-Sub-questions:
-1. Which U.S. states show high income and low obesity rates?  
-2. Does physical activity explain the link between income and obesity?  
-3. How does the U.S. pattern compare to global countries?  
+## Research Question
+
+**Hypothesis:** Does U.S. per capita income influence obesity levels, and how does physical activity mediate this relationship?
+
+**Sub-questions:**
+* Identify U.S. states with high income and low obesity rates.
+* Determine the role of physical activity in the income-obesity link.
+* Compare U.S. patterns to global trends.
 
 ---
 
-## 2. Data Collection
+## Data Sources
 
-### USA Data (from Google Drive)
-| Dataset | Description | Source |
-|----------|--------------|--------|
-| `SAINC1__ALL_AREAS_1929_2024.csv` | Annual personal income by state | BEA |
-| `Behavioral_Risk_Factor_Surveillance_System_(BRFSS)_Prevalence_Data_(2011_to_present).csv` | Health indicators (obesity, activity) | CDC |
-| `SASUMMARY__ALL_AREAS_1998_2024.csv` | State summary statistics | BEA |
-| GeoJSON and definition files | For mapping and metadata | BEA |
-
-### Global Data
-| Dataset | Variable | Source |
-|----------|-----------|--------|
-| `share-of-adults-defined-as-obese.csv` | % adults BMI ≥ 30 | Our World in Data (WHO) |
-| World Bank API (`NY.GDP.PCAP.CD`) | GDP per capita (current USD) | World Bank |
-
-All datasets were verified for structure and completeness before processing (as per *Data Preprocessing* step in lecture slides:contentReference[oaicite:2]{index=2}).
+| Scope | Source | Dataset/Variable | Description |
+|:---|:---|:---|:---|
+| **U.S.** | BEA | `SAINC1...` | Annual per capita personal income (by state) |
+| **U.S.** | CDC (BRFSS) | `Behavioral_Risk_Factor...` | Health indicators (Obesity, Physical Activity) |
+| **Global** | OWID (WHO) | `share-of-adults...` | % adults with BMI ≥ 30 (Obesity Rate) |
+| **Global** | World Bank API | `NY.GDP.PCAP.CD` | GDP per capita (current USD) |
 
 ---
 
-## 3. Data Cleaning & Merging
+## Data Pipeline (U.S.)
 
-### U.S. Data Pipeline
-1. **Income:**  
-   - Filtered `Per capita personal income (dollars)` from BEA table.  
-   - Reshaped wide → long format by year and state.  
-   - Focused on **2023** data.
+The analysis focuses on **2023** data for **47 U.S. states**.
 
-2. **Health:**  
-   - Extracted *“BMI Categories” → “Obese (BMI ≥30)”* from BRFSS (2023).  
-   - Extracted *“Physical Activity Index / Aerobic Activity” → “Yes”* responses.  
-   - Aggregated multiple records per state using mean values.  
+**Steps:**
+1.  **Income:** Filtered BEA data for `Per capita personal income (dollars)`.
+2.  **Health:** Extracted *Obese (BMI ≥30)* and *Physical Activity (Yes)* rates from BRFSS, aggregated by mean.
+3.  **Merge:** Combined `PerCapitaIncome`, `ObesityRate`, and `PhysicalActivityRate`.
 
-3. **Merge:**  
-   Combined 2023 `PerCapitaIncome`, `ObesityRate`, and `PhysicalActivityRate` for 47 U.S. states.
-
-```python
-Merged dataset shape: (47, 4)
-['Locationdesc', 'PerCapitaIncome', 'ObesityRate', 'PhysicalActivityRate']
+*Final Merged Dataset Shape:* `(47, 4)` with columns: `['Locationdesc', 'PerCapitaIncome', 'ObesityRate', 'PhysicalActivityRate']`
