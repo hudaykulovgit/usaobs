@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.io as pio
+import numpy as np
 
 # --- Page setup ---
 st.set_page_config(page_title="Income and Obesity Analysis", layout="wide")
@@ -106,12 +107,10 @@ elif page == "Obesity Analysis & ML":
 
     st.markdown("---")
 
-    # --- Global Scatter: Income vs Obesity ---
-    st.subheader("Global Relationship: Income vs Obesity (2022)")
-    global_df["log_GDP_per_capita"] = (global_df["GDP_per_capita_USD"]).apply(lambda x: 0 if x <= 0 else pd.np.log10(x))
-    fig5 = px.scatter(
-        global_df, x="log_GDP_per_capita", y="ObesityRate",
-        trendline="ols", color="ObesityRate", color_continuous_scale="Viridis",
+    # --- Safe log transform for GDP per capita ---
+global_df["log_GDP_per_capita"] = np.log10(
+    global_df["GDP_per_capita_USD"].clip(lower=1)
+)
         text="ISO3", hover_name="country_name",
         labels={"log_GDP_per_capita": "Log10 GDP per Capita (USD)", "ObesityRate": "Obesity Rate (%)"},
         title=""
