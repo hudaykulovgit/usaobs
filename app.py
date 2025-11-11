@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+<<<<<<< HEAD
 from pathlib import Path
 
 # -------------------------
@@ -192,12 +193,110 @@ elif section == "Obesity Analysis & ML":
 
     st.subheader("State Clusters (K-Means Results)")
     fig_us_clusters = px.choropleth(
+=======
+
+# ================================================
+# PAGE CONFIG
+# ================================================
+st.set_page_config(
+    page_title="Income, Health & Obesity Analysis",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+st.markdown("""
+    <style>
+        body, h1, h2, h3, h4, h5, h6, p, table, label {
+            font-family: "Segoe UI", sans-serif;
+        }
+        .block-container {
+            padding-top: 2rem;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# ================================================
+# SIDEBAR NAVIGATION
+# ================================================
+st.sidebar.title("Navigation")
+page = st.sidebar.radio("Go to:", ["About the Project", "Obesity Analysis & ML"])
+
+# ================================================
+# PAGE 1: ABOUT
+# ================================================
+if page == "About the Project":
+    st.title("About the Project")
+    st.markdown("""
+    This project explores how **per capita income** and **physical activity**
+    affect **obesity prevalence** across U.S. states and globally.
+    
+    - **U.S. Analysis:** Uses BEA income data and CDC BRFSS health indicators.  
+    - **Global Comparison:** Combines WHO/World Bank datasets (via OWID).  
+    - **Machine Learning:** K-Means clustering classifies regions by economic and health status.  
+
+    More detailed context and literature will be added later.
+    """)
+
+# ================================================
+# PAGE 2: ANALYSIS & ML
+# ================================================
+elif page == "Obesity Analysis & ML":
+    st.title("Obesity Analysis & Machine Learning")
+    st.markdown("#### Explore the data-driven relationship between income, health, and obesity.")
+
+    # -------- Load data --------
+    DATA_PATH = "data/"
+    RESULTS_PATH = "results/"
+    PLOTS_PATH = "plots/"
+
+    try:
+        us_df = pd.read_csv(DATA_PATH + "us_health_income_2023.csv")
+        us_clusters = pd.read_csv(RESULTS_PATH + "us_clusters_2023.csv")
+        global_df = pd.read_csv(DATA_PATH + "global_merged_obesity_income.csv")
+    except Exception as e:
+        st.error(f"Error loading data: {e}")
+        st.stop()
+
+    # -------- U.S. Section --------
+    st.subheader("U.S. State-Level Analysis (2023)")
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("##### Income vs Obesity")
+        fig1 = px.scatter(
+            us_df,
+            x="PerCapitaIncome",
+            y="ObesityRate",
+            color="PhysicalActivityRate",
+            text="Locationdesc",
+            trendline="ols",
+            title="Income vs Obesity Rate by State",
+            color_continuous_scale="Viridis"
+        )
+        st.plotly_chart(fig1, use_container_width=True)
+
+    with col2:
+        st.markdown("##### Physical Activity vs Obesity")
+        fig2 = px.scatter(
+            us_df,
+            x="PhysicalActivityRate",
+            y="ObesityRate",
+            text="Locationdesc",
+            trendline="ols",
+            title="Physical Activity vs Obesity",
+            color_continuous_scale="Viridis"
+        )
+        st.plotly_chart(fig2, use_container_width=True)
+
+    st.markdown("##### U.S. State Clusters by Income, Obesity & Activity")
+    fig_map = px.choropleth(
+>>>>>>> 08c88d8 (Initial Streamlit obesity analysis app)
         us_clusters,
         locations="Locationabbr",
         color="ClusterLabel",
         locationmode="USA-states",
         hover_name="Locationdesc",
         hover_data=["PerCapitaIncome", "ObesityRate", "PhysicalActivityRate"],
+<<<<<<< HEAD
         title="U.S. State Clusters by Income and Health Indicators (2023)",
         color_discrete_sequence=px.colors.qualitative.Bold,
         scope="usa"
@@ -211,10 +310,33 @@ elif section == "Obesity Analysis & ML":
 
     # ===== Global Section =====
     st.header("🌍 Global Income vs Obesity (2022)")
+=======
+        scope="usa",
+        color_discrete_sequence=px.colors.qualitative.Bold,
+        title="U.S. Health & Income Clusters (K-Means)"
+    )
+    st.plotly_chart(fig_map, use_container_width=True)
+
+    # -------- Global Section --------
+    st.subheader("Global Analysis (2022)")
+    st.markdown("##### Global Income vs Obesity")
+    global_df["log_GDP_per_capita"] = (
+        global_df["GDP_per_capita_USD"].apply(lambda x: x if x > 0 else None)
+    ).apply(lambda x: 0 if pd.isna(x) else x)
+    global_df["log_GDP_per_capita"] = global_df["GDP_per_capita_USD"].apply(lambda x: pd.NA if x <= 0 else x)
+    global_df["log_GDP_per_capita"] = global_df["GDP_per_capita_USD"].apply(lambda x: None if x <= 0 else x)
+    global_df["log_GDP_per_capita"] = global_df["GDP_per_capita_USD"].apply(lambda x: None if x <= 0 else x)
+    global_df["log_GDP_per_capita"] = global_df["GDP_per_capita_USD"].apply(lambda x: None if x <= 0 else x)
+    global_df["log_GDP_per_capita"] = global_df["GDP_per_capita_USD"].apply(lambda x: None if x <= 0 else x)
+    global_df["log_GDP_per_capita"] = global_df["GDP_per_capita_USD"].apply(lambda x: None if x <= 0 else x)
+    global_df["log_GDP_per_capita"] = global_df["GDP_per_capita_USD"].apply(lambda x: None if x <= 0 else x)
+
+>>>>>>> 08c88d8 (Initial Streamlit obesity analysis app)
     fig_global = px.scatter(
         global_df,
         x="GDP_per_capita_USD",
         y="ObesityRate",
+<<<<<<< HEAD
         hover_name="CountryName",
         color="ObesityRate",
         color_continuous_scale="Viridis",
@@ -233,3 +355,16 @@ elif section == "Obesity Analysis & ML":
 
 st.divider()
 st.caption("© 2025 Machine Learning Course | Developed in Google Colab & Streamlit")
+=======
+        text="ISO3",
+        trendline="ols",
+        title="Global Relationship: GDP per Capita vs Obesity Rate (2022)",
+        color="ObesityRate",
+        color_continuous_scale="Viridis"
+    )
+    st.plotly_chart(fig_global, use_container_width=True)
+
+    st.markdown("##### Sample Global Data")
+    st.dataframe(global_df[["Country", "ObesityRate", "GDP_per_capita_USD"]].head(15))
+    st.markdown("Data sources include WHO, World Bank, and Our World in Data (OWID).")
+>>>>>>> 08c88d8 (Initial Streamlit obesity analysis app)

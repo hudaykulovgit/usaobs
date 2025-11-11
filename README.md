@@ -8,9 +8,17 @@ A Machine Learning and Data Visualization project exploring how per capita incom
 - Global comparison (income vs obesity, 2022)
 - Clean Streamlit layout with sidebar navigation
 
+<<<<<<< HEAD
 Data Sources:
+=======
+## Data Sources:
+>>>>>>> 08c88d8 (Initial Streamlit obesity analysis app)
 Bureau of Economic Analysis (BEA)
 CDC BRFSS
 World Bank API
 WHO Global Health Observatory / Our World in Data
+<<<<<<< HEAD
 Developed in Google Colab & Streamlit — 2025
+=======
+Developed in Google Colab & Streamlit — 2025
+>>>>>>> 08c88d8 (Initial Streamlit obesity analysis app)

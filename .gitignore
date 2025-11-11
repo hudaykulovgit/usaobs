@@ -1,0 +1,25 @@
+# Virtual environments
+venv/
+.env/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# System files
+.DS_Store
+
+# IDE config
+.vscode/
+
+# Large data outputs (optional)
+*.csv
+*.xlsx
+*.geojson
+*.pdf
+*.zip
+*.png
+*.html
+
+# Streamlit temporary
+.streamlit/

@@ -3,4 +3,9 @@ numpy
 plotly
 streamlit
 scikit-learn
+<<<<<<< HEAD
 requests
+=======
+requests
+statsmodels
+>>>>>>> 08c88d8 (Initial Streamlit obesity analysis app)
