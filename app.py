@@ -191,6 +191,9 @@ else:
         "NY.GDP.PCAP.CD": "GDP_per_capita_USD"
     }
     global_df.rename(columns=rename_map, inplace=True)
+    
+    # FIX: Re-deduplicate columns in case the rename operation created duplicates.
+    global_df = global_df.loc[:, ~global_df.columns.duplicated()].copy()
 
     for c in ["ObesityRate", "GDP_per_capita_USD"]:
         if c in global_df.columns:
