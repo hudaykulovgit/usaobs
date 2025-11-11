@@ -2,15 +2,10 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
+from pathlib import Path
 
-# ================================================
-# PAGE CONFIG
-# ================================================
-st.set_page_config(
-    page_title="Income, Health & Obesity Analysis",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# ---------------- Page config & style ----------------
+st.set_page_config(page_title="Income & Obesity — USA & World", layout="wide")
 st.markdown("""
 <style>
 * { font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif; }
@@ -122,46 +117,95 @@ else:
     fig_cluster_scatter.update_traces(textposition="top center")
     st.plotly_chart(fig_cluster_scatter, use_container_width=True)
 
-    st.markdown("##### U.S. State Clusters by Income, Obesity & Activity")
-    fig_map = px.choropleth(
+    # ===== 4) Map: U.S. State Clusters =====
+    st.subheader("U.S. State Clusters by Income, Obesity & Activity (Map)")
+    fig_cluster_map = px.choropleth(
         us_clusters,
         locations="Locationabbr",
         locationmode="USA-states",
         color="ClusterLabel",
         hover_name="Locationdesc",
-        hover_data=["PerCapitaIncome", "ObesityRate", "PhysicalActivityRate"],
+        hover_data=["PerCapitaIncome","ObesityRate","PhysicalActivityRate"],
         scope="usa",
         color_discrete_sequence=px.colors.qualitative.Bold,
         title="K-Means Cluster Map (2023)"
     )
     st.plotly_chart(fig_cluster_map, use_container_width=True)
 
-    # -------- Global Section --------
-    st.subheader("Global Analysis (2022)")
-    st.markdown("##### Global Income vs Obesity")
-    global_df["log_GDP_per_capita"] = (
-        global_df["GDP_per_capita_USD"].apply(lambda x: x if x > 0 else None)
-    ).apply(lambda x: 0 if pd.isna(x) else x)
-    global_df["log_GDP_per_capita"] = global_df["GDP_per_capita_USD"].apply(lambda x: pd.NA if x <= 0 else x)
-    global_df["log_GDP_per_capita"] = global_df["GDP_per_capita_USD"].apply(lambda x: None if x <= 0 else x)
-    global_df["log_GDP_per_capita"] = global_df["GDP_per_capita_USD"].apply(lambda x: None if x <= 0 else x)
-    global_df["log_GDP_per_capita"] = global_df["GDP_per_capita_USD"].apply(lambda x: None if x <= 0 else x)
-    global_df["log_GDP_per_capita"] = global_df["GDP_per_capita_USD"].apply(lambda x: None if x <= 0 else x)
-    global_df["log_GDP_per_capita"] = global_df["GDP_per_capita_USD"].apply(lambda x: None if x <= 0 else x)
-    global_df["log_GDP_per_capita"] = global_df["GDP_per_capita_USD"].apply(lambda x: None if x <= 0 else x)
-
-    fig_global = px.scatter(
-        global_df,
-        x="GDP_per_capita_USD",
-        y="ObesityRate",
-        text="ISO3",
+    # ===== 5) Global Relationship: Income vs Obesity (2022) =====
+    st.subheader("Global Relationship: Income vs Obesity (2022)")
+    world_df = global_2022.dropna(subset=["GDP_per_capita_USD","ObesityRate"]).copy()
+    world_df["log_GDP_pc"] = np.log10(world_df["GDP_per_capita_USD"].astype(float))
+    fig_world = px.scatter(
+        world_df, x="log_GDP_pc", y="ObesityRate", text="ISO3",
         trendline="ols",
-        title="Global Relationship: GDP per Capita vs Obesity Rate (2022)",
-        color="ObesityRate",
-        color_continuous_scale="Viridis"
+        color="ObesityRate", color_continuous_scale="Viridis",
+        labels={"log_GDP_pc":"Log10 GDP per Capita (USD)","ObesityRate":"Obesity Rate (%)"},
+        title="World: Income vs Obesity (2022)"
     )
-    st.plotly_chart(fig_global, use_container_width=True)
+    fig_world.update_traces(textposition="top center")
+    st.plotly_chart(fig_world, use_container_width=True)
 
-    st.markdown("##### Sample Global Data")
-    st.dataframe(global_df[["Country", "ObesityRate", "GDP_per_capita_USD"]].head(15))
-    st.markdown("Data sources include WHO, World Bank, and Our World in Data (OWID).")
+    # ===== 6) Side-by-side: U.S. vs World =====
+    st.subheader("Side-by-side: U.S. States vs World (2023 vs 2022)")
+    s1, s2 = st.columns(2)
+    with s1:
+        st.markdown("**U.S. States: Income vs Obesity (2023)**")
+        st.plotly_chart(fig_income_obesity, use_container_width=True)
+    with s2:
+        st.markdown("**World: Income vs Obesity (2022)**")
+        st.plotly_chart(fig_world, use_container_width=True)
+
+    # ===== 7) Animations =====
+    st.subheader("Animations")
+
+    # --- U.S. Smoothed 2011–2024 animation (requires BRFSS + income long) ---
+    brfss_full = try_read(DATA/"brfss_prevalence_full.csv")
+    income_long = try_read(DATA/"us_income_long.csv")
+    if brfss_full is not None and income_long is not None:
+        obese = (brfss_full[(brfss_full["Topic"]=="BMI Categories") &
+                            (brfss_full["Response"].str.contains("Obese", case=False, na=False))]
+                 .copy())
+        obese = obese.rename(columns={"Locationdesc":"State","Data_value":"ObesityRate"})
+        obese = obese[["Year","State","ObesityRate"]]
+
+        inc = income_long.rename(columns={"GeoName":"State","PerCapitaIncome":"Income"})
+        inc = inc[["Year","State","Income"]]
+
+        us_ts = obese.merge(inc, on=["Year","State"], how="inner")
+        us_ts = us_ts.sort_values(["State","Year"])
+        us_ts["ObesityRate_smooth"] = us_ts.groupby("State")["ObesityRate"].transform(lambda s: s.rolling(3, min_periods=1).mean())
+        us_ts["Income_smooth"] = us_ts.groupby("State")["Income"].transform(lambda s: s.rolling(3, min_periods=1).mean())
+
+        fig_us_anim = px.scatter(
+            us_ts, x="Income_smooth", y="ObesityRate_smooth",
+            animation_frame="Year", animation_group="State",
+            text="State", range_x=[us_ts["Income_smooth"].min()*0.95, us_ts["Income_smooth"].max()*1.05],
+            range_y=[us_ts["ObesityRate_smooth"].min()*0.95, us_ts["ObesityRate_smooth"].max()*1.05],
+            title="U.S. States: Income vs Obesity (Smoothed 2011–2024)",
+            labels={"Income_smooth":"Per Capita Income ($, 3y MA)", "ObesityRate_smooth":"Obesity Rate (%, 3y MA)"},
+            color="State", height=600
+        )
+        st.plotly_chart(fig_us_anim, use_container_width=True)
+    else:
+        st.info("U.S. animation skipped — expecting `data/brfss_prevalence_full.csv` and `data/us_income_long.csv`.")
+
+    # --- Global animation (requires global timeseries) ---
+    glob_ob_full = try_read(DATA/"global_obesity_full.csv")
+    glob_inc_full = try_read(DATA/"global_income_full.csv")
+    if glob_ob_full is not None and glob_inc_full is not None:
+        g_ob = glob_ob_full.rename(columns={"prevalence_of_obesity":"ObesityRate"})
+        g_inc = glob_inc_full.rename(columns={"value":"GDP_per_capita_USD"})
+        g_inc["Year"] = g_inc["Year"].astype(int)
+        g = g_ob.merge(g_inc[["ISO3","Year","GDP_per_capita_USD"]], on=["ISO3","Year"], how="inner").dropna()
+        g["log_GDP_pc"] = np.log10(g["GDP_per_capita_USD"].astype(float))
+        fig_world_anim = px.scatter(
+            g, x="log_GDP_pc", y="ObesityRate", animation_frame="Year", animation_group="ISO3",
+            text="ISO3", color="ObesityRate", color_continuous_scale="Viridis",
+            title="Global Relationship: Income vs Obesity (Animation)",
+            labels={"log_GDP_pc":"Log10 GDP per Capita (USD)","ObesityRate":"Obesity Rate (%)"},
+            height=600
+        )
+        st.plotly_chart(fig_world_anim, use_container_width=True)
+    else:
+        st.info("Global animation skipped — expecting `data/global_obesity_full.csv` and `data/global_income_full.csv`.")
