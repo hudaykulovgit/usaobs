@@ -1,8 +1,7 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
-import plotly.io as pio
 import numpy as np
+import plotly.express as px
 
 # --- Page setup ---
 st.set_page_config(page_title="Income and Obesity Analysis", layout="wide")
@@ -32,7 +31,7 @@ if page == "About the Project":
     
     **Data Sources**
     - U.S. data: BEA (Income), CDC BRFSS (Health indicators)
-    - Global data: World Bank (GDP per capita), WHO via Our World in Data (Obesity rates)
+    - Global data: World Bank (GDP per capita), WHO via Our World In Data (Obesity rates)
     
     **Objective**
     - Investigate whether higher income correlates with lower obesity.
@@ -57,7 +56,7 @@ elif page == "Obesity Analysis & ML":
         st.subheader("State-level Relationship: Income vs Obesity (2023)")
         fig1 = px.scatter(
             us_df, x="PerCapitaIncome", y="ObesityRate", trendline="ols",
-            text="Locationdesc", title="", labels={
+            text="Locationdesc", labels={
                 "PerCapitaIncome": "Per Capita Income ($)",
                 "ObesityRate": "Obesity Rate (%)"
             }
@@ -70,7 +69,7 @@ elif page == "Obesity Analysis & ML":
         st.subheader("State-level Relationship: Physical Activity vs Obesity (2023)")
         fig2 = px.scatter(
             us_df, x="PhysicalActivityRate", y="ObesityRate", trendline="ols",
-            text="Locationdesc", title="", labels={
+            text="Locationdesc", labels={
                 "PhysicalActivityRate": "Physical Activity Rate (%)",
                 "ObesityRate": "Obesity Rate (%)"
             }
@@ -86,8 +85,7 @@ elif page == "Obesity Analysis & ML":
         us_clusters, x="PerCapitaIncome", y="ObesityRate",
         color=us_clusters["Cluster"].astype(str),
         text="Locationdesc",
-        labels={"PerCapitaIncome": "Per Capita Income ($)", "ObesityRate": "Obesity Rate (%)"},
-        title=""
+        labels={"PerCapitaIncome": "Per Capita Income ($)", "ObesityRate": "Obesity Rate (%)"}
     )
     fig3.update_traces(textposition="top center")
     st.plotly_chart(fig3, use_container_width=True)
@@ -99,7 +97,11 @@ elif page == "Obesity Analysis & ML":
     fig4 = px.choropleth(
         us_clusters, locations="Locationabbr", color="ClusterLabel",
         locationmode="USA-states", hover_name="Locationdesc",
-        hover_data={"PerCapitaIncome": True, "ObesityRate": True, "PhysicalActivityRate": True},
+        hover_data={
+            "PerCapitaIncome": True,
+            "ObesityRate": True,
+            "PhysicalActivityRate": True
+        },
         color_discrete_sequence=px.colors.qualitative.Bold,
         scope="usa"
     )
@@ -107,13 +109,24 @@ elif page == "Obesity Analysis & ML":
 
     st.markdown("---")
 
-    # --- Safe log transform for GDP per capita ---
-global_df["log_GDP_per_capita"] = np.log10(
-    global_df["GDP_per_capita_USD"].clip(lower=1)
-)
+    # --- Global Scatter: Income vs Obesity ---
+    st.subheader("Global Relationship: Income vs Obesity (2022)")
+
+    # Use numpy safely instead of deprecated pd.np
+    global_df["log_GDP_per_capita"] = np.where(
+        global_df["GDP_per_capita_USD"] > 0,
+        np.log10(global_df["GDP_per_capita_USD"]),
+        np.nan
+    )
+
+    fig5 = px.scatter(
+        global_df, x="log_GDP_per_capita", y="ObesityRate",
+        trendline="ols", color="ObesityRate", color_continuous_scale="Viridis",
         text="ISO3", hover_name="country_name",
-        labels={"log_GDP_per_capita": "Log10 GDP per Capita (USD)", "ObesityRate": "Obesity Rate (%)"},
-        title=""
+        labels={
+            "log_GDP_per_capita": "Log10 GDP per Capita (USD)",
+            "ObesityRate": "Obesity Rate (%)"
+        }
     )
     fig5.update_traces(textposition="top center")
     st.plotly_chart(fig5, use_container_width=True)
