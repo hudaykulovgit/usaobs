@@ -8,12 +8,12 @@
 
 ## Research Question
 
-**Hypothesis:** Does U.S. per capita income influence obesity levels, and how does physical activity mediate this relationship?
+### Hypothesis: Does U.S. per capita income influence obesity levels, and how does physical activity mediate this relationship?
 
 **Sub-questions:**
-* Identify U.S. states with high income and low obesity rates.
-* Determine the role of physical activity in the income-obesity link.
-* Compare U.S. patterns to global trends.
+#### Identify U.S. states with high income and low obesity rates.
+#### Determine the role of physical activity in the income-obesity link.
+#### Compare U.S. patterns to global trends.
 
 ---
 
