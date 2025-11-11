@@ -102,7 +102,9 @@ else:
 
     # Try to attach state abbreviations if missing
     if "Locationabbr" not in us_df.columns:
-        brfss_any = safe_load_csv(PATH_US_OBE_RAW) or safe_load_csv(PATH_US_ACT_RAW)
+        brfss_any = safe_load_csv(PATH_US_OBE_RAW)
+        if brfss_any is None:
+            brfss_any = safe_load_csv(PATH_US_ACT_RAW)
         if brfss_any is not None and {"Locationdesc", "Locationabbr"}.issubset(brfss_any.columns):
             abbrev_map = brfss_any[["Locationdesc", "Locationabbr"]].drop_duplicates()
             us_df = us_df.merge(abbrev_map, on="Locationdesc", how="left")
