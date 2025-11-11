@@ -2,7 +2,7 @@
 **Course:** 2025 Machine Learning and Text Analytics in Business  
 **Instructor:** Assoc. Prof. Hongwei Chuang (GSIM, IUJ)  
 **Toolchain:** Google Colab · pandas · scikit-learn · Plotly · Streamlit-ready workflow  
-**Slides Referenced:** Data Preprocessing, EDA, Clustering, and K-Means Concepts:contentReference[oaicite:0]{index=0}:contentReference[oaicite:1]{index=1}  
+**Slides Referenced:** Data Preprocessing, EDA, Clustering, and K-Means
 
 ---
 
