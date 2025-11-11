@@ -19,14 +19,13 @@
 
 ## Data Sources
 
-| Scope | Source | Dataset/Variable | Description |
+| Scope | Source | Data Type | Description |
 |:---|:---|:---|:---|
-| **U.S.** | BEA | `SAINC1__ALL_AREAS_1929_2024` | Annual per capita personal income (by state) |
-| **U.S.** | CDC (BRFSS) | `Behavioral_Risk_Factor_Surveillance_System...` | Health indicators (Obesity, Physical Activity) |
-| **U.S.** | BEA | `SASUMMARY__ALL_AREAS_1998_2024` | State summary statistics |
-| **U.S.** | BEA | GeoJSON and definition files | For mapping and metadata |
-| **Global** | OWID (WHO) | `share-of-adults-defined-as-obese` | % adults with BMI ≥ 30 (Obesity Rate) |
-| **Global** | World Bank API | `NY.GDP.PCAP.CD` | GDP per capita (current USD) |
+| **U.S.** | BEA | **Personal Income** | Annual per capita income (by state) |
+| **U.S.** | CDC (BRFSS) | **Health Indicators** | Obesity and Physical Activity rates |
+| **U.S.** | BEA | **Metadata** | State summary statistics and GeoJSON files for mapping |
+| **Global** | OWID (WHO) | **Obesity Rate** | Percentage of adults with BMI ≥ 30 |
+| **Global** | World Bank API | **Income** | GDP per capita (current USD) |
 
 ---
 
